@@ -57,7 +57,7 @@ const sendMail = async (email, token) => {
       subject: "Reset Password link for signUp App",
       text:
         "Hello Testing Google Api for Second time\n" +
-        "http://localhost:3000/resetPassword/" +
+        "https://incandescent-torte-042425.netlify.app" +
         token,
     };
 
