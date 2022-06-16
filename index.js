@@ -5,6 +5,7 @@ import { google } from "googleapis";
 import validator from "validator";
 import cors from "cors";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
@@ -99,10 +100,17 @@ app.post("/signup", async function (req, res) {
       .collection("user")
       .findOne({ email: data.email, username: data.username });
     if (!postCheck) {
+      const password = req.body.password;
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
       const postInsert = await client
         .db("forgotPassword")
         .collection("user")
-        .insertOne(data);
+        .insertOne({
+          username: req.body.username,
+          email: req.body.email,
+          password: hashedPassword,
+        });
       res.send(postInsert);
     } else {
       res.status(400).send({ errorMsg: "User already exists" });
@@ -117,9 +125,14 @@ app.post("/login", async function (req, res) {
   const postCheck = await client
     .db("forgotPassword")
     .collection("user")
-    .findOne(data);
+    .findOne({ email: data.email });
   if (postCheck) {
-    res.send(postCheck);
+    const password = await bcrypt.compare(data.password, postCheck.password);
+    if (password) {
+      res.send(postCheck);
+    } else {
+      res.status(400).send("Incorrect username or password");
+    }
   } else {
     res.status(400).send("Incorrect username or password");
   }
