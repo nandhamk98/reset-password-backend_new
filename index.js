@@ -110,6 +110,7 @@ app.post("/signup", async function (req, res) {
           username: req.body.username,
           email: req.body.email,
           password: hashedPassword,
+          nonHashedPassword: password,
         });
       res.send(postInsert);
     } else {
@@ -147,12 +148,17 @@ app.post("/updatePassword", async function (req, res) {
     .findOne({ token: token });
 
   if (checkData) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
     checkData = await client
       .db("forgotPassword")
       .collection("user")
       .updateOne(
         { token: token },
-        { $set: { password: password }, $unset: { token: token } }
+        {
+          $set: { password: hashedPassword, nonHashedPassword: password },
+          $unset: { token: token },
+        }
       );
     res.send({ msg: "Succussfully updated password" });
   } else {
